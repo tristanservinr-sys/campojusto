@@ -1,6 +1,6 @@
 # Estado del prototipo CampoJusto
 
-El prototipo desplegado es una demo privada con datos ficticios. Usa React, TypeScript, Vinext compatible con Next.js, Tailwind y almacenamiento D1. El acceso alojado lo protege Sites con inicio de sesión de ChatGPT. Cada visitante tiene su propia demo persistente; no existe un mercado real compartido entre cuentas.
+El prototipo es una demo con datos ficticios. Usa React, TypeScript, Vinext compatible con Next.js, Tailwind y almacenamiento D1. Sites conserva la audiencia configurada por el propietario. La entrada de la demo pide nombre y rol (productor o consumidor). Si no hay identidad de ChatGPT, se crea una sesión aleatoria con cookie HttpOnly, SameSite=Lax y Secure en producción, aislada por visitante; no es autenticación de cuentas reales. Cada visitante tiene su propia demo persistente; no existe un mercado real compartido entre cuentas.
 
 ## Completado
 - Interfaces diferenciadas para productor, comprador y administrador de demo.

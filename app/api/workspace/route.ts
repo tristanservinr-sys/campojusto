@@ -15,27 +15,32 @@ const cropSchema=z.object({product:z.string().min(1),variety:z.string().max(80),
 const offerSchema=z.object({name:z.string().min(2),city:z.string().min(2),product:z.string().min(1),variety:z.string(),quantity:positive,price:positive,start:date,end:date,expires:date,partial:z.boolean(),contact:z.string().min(3),address:z.string().min(3)}).refine(v=>v.end>=v.start&&v.expires>=new Date().toISOString().slice(0,10),{message:'Revisa las fechas y el vencimiento'});
 async function context(req:NextRequest){
  const user=await getChatGPTUser();
- if(!user&&!import.meta.env.DEV)throw new Error('AUTH');
  const demo=req.nextUrl.searchParams.get('mode')!=='live';
- const id=(user?.userId??'local-preview')+(demo?':demo':':live');const db=getDb();
+ if(!user&&!demo)throw new Error('AUTH');
+ const cookie=req.cookies.get('cj_demo_session')?.value;
+ const validCookie=cookie&&/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(cookie)?cookie:null;
+ if(!user&&!validCookie&&req.method!=='GET')throw new Error('AUTH');
+ const session=!user&&!validCookie?crypto.randomUUID():null;
+ const id=(user?.userId??('guest:'+ (validCookie??session)))+(demo?':demo':':live');const db=getDb();
  let row=(await db.select().from(workspaces).where(eq(workspaces.id,id)))[0];
  if(!row){const data=seed(demo);await db.insert(workspaces).values({id,data:JSON.stringify(data),updatedAt:new Date().toISOString()}).onConflictDoNothing();row=(await db.select().from(workspaces).where(eq(workspaces.id,id)))[0];}
- return {db,id,demo,state:JSON.parse(row.data) as State,revision:row.updatedAt,user};
+ return {db,id,demo,state:JSON.parse(row.data) as State,revision:row.updatedAt,user,session};
 }
 function response(state:State,demo:boolean,revision:string){
  const today=new Date().toISOString().slice(0,10);const crops=state.crops.filter(c=>state.role==='admin'||c.owner==='p1');
  const results=Object.fromEntries(crops.map(c=>{const rows=evaluate(c,state.offers,state.logistics,state.bands,state.users,today);return [c.id,{rows:rows.map(r=>({...r,offer:{...r.offer,contact:state.role==='admin'||state.interests.some(i=>i.cropId===c.id&&i.offerId===r.offer.id)?r.offer.contact:'',address:state.role==='admin'||state.interests.some(i=>i.cropId===c.id&&i.offerId===r.offer.id)?r.offer.address:''}})),top:topThree(rows).map(r=>r.offer.id),explanation:explain(topThree(rows),c.available,rows.filter(r=>r.category==='outside').sort((a,b)=>b.net-a.net))}]}));
  const offers=state.offers.map(o=>({...o,contact:state.role==='admin'||state.role==='buyer'&&o.owner==='b0'?o.contact:'',address:state.role==='admin'||state.role==='buyer'&&o.owner==='b0'?o.address:''}));
- return {state:{...state,crops,offers},results,demo,revision,services:{maps:'Pendiente de configurar',ai:'Explicación determinista de respaldo',supabase:'Pendiente de configurar',storage:'D1 persistente',auth:'Acceso privado de Sites'}};
+ return {state:{...state,crops,offers},results,demo,revision,services:{maps:'Pendiente de configurar',ai:'Explicación determinista de respaldo',supabase:'Pendiente de configurar',storage:'D1 persistente',auth:'Sesión de demostración'}};
 }
-export async function GET(req:NextRequest){try{const c=await context(req);return NextResponse.json(response(c.state,c.demo,c.revision),{headers:{'Cache-Control':'no-store'}})}catch(e){return NextResponse.json({error:e instanceof Error&&e.message==='AUTH'?'Inicia sesión para continuar':'No se pudo cargar la información'},{status:e instanceof Error&&e.message==='AUTH'?401:500})}}
+export async function GET(req:NextRequest){try{const c=await context(req);const res=NextResponse.json(response(c.state,c.demo,c.revision),{headers:{'Cache-Control':'no-store'}});if(c.session)res.cookies.set('cj_demo_session',c.session,{httpOnly:true,secure:!import.meta.env.DEV,sameSite:'lax',path:'/',maxAge:60*60*24*14});return res}catch(e){return NextResponse.json({error:e instanceof Error&&e.message==='AUTH'?'Inicia sesión para continuar':'No se pudo cargar la información'},{status:e instanceof Error&&e.message==='AUTH'?401:500})}}
 export async function POST(req:NextRequest){try{
  if(req.headers.get('origin')&&req.headers.get('origin')!==req.nextUrl.origin)return NextResponse.json({error:'Origen no permitido'},{status:403});
  const c=await context(req);const {action,payload,revision}=z.object({action:z.string(),payload:z.record(z.any()).default({}),revision:z.string()}).parse(await req.json());let s=c.state;
  if(revision!==c.revision)return NextResponse.json({error:'Los datos cambiaron. Actualiza la página.'},{status:409});
- if(!['role','reset'].includes(action)&&s.role!=='admin'&&!s.users.some(u=>u.id===(s.role==='buyer'?'b0':'p1')&&u.active))throw new Error('FORBIDDEN');
+ if(!['role','reset','enter'].includes(action)&&s.role!=='admin'&&!s.users.some(u=>u.id===(s.role==='buyer'?'b0':'p1')&&u.active))throw new Error('FORBIDDEN');
  const admin=()=>{if(s.role!=='admin')throw new Error('FORBIDDEN')};const role=(r:string)=>{if(s.role!==r)throw new Error('FORBIDDEN')};
- if(action==='role'){if(!c.demo)throw new Error('FORBIDDEN');s.role=z.enum(['producer','buyer','admin']).parse(payload.role)}
+ if(action==='enter'){if(!c.demo)throw new Error('FORBIDDEN');const entry=z.object({name:z.string().trim().min(2,'Escribe tu nombre').max(80),role:z.enum(['producer','buyer'])}).parse(payload);s.role=entry.role;s.profile.name=entry.name;s.onboarded=true;const actor=s.users.find(u=>u.id===(entry.role==='producer'?'p1':'b0'));if(actor)actor.name=entry.name;}
+ else if(action==='role'){if(!c.demo)throw new Error('FORBIDDEN');s.role=z.enum(['producer','buyer','admin']).parse(payload.role)}
  else if(action==='register'){if(s.registered)throw new Error('FORBIDDEN');s.role=z.enum(['producer','buyer']).parse(payload.role);s.registered=true;s.profile=z.object({name:z.string().min(2),contact:z.string().min(3),city:z.string().min(2),address:z.string().min(3)}).parse(payload.profile)}
  else if(action==='profile'){s.profile=z.object({name:z.string().min(2),contact:z.string().min(3),city:z.string().min(2),address:z.string().min(3)}).parse(payload);}
  else if(action==='logistics'){role('producer');s.logistics=z.object({radius:positive,consumption:positive.max(5),fuel:positive,capacity:positive,origin:z.string().min(3)}).parse(payload)}

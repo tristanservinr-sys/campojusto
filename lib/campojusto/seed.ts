@@ -1,5 +1,5 @@
 import type {Crop,Offer,Logistics,Band} from './engine';
-export type State={role:string;registered:boolean;profile:{name:string;contact:string;city:string;address:string};users:{id:string;name:string;role:string;active:boolean}[];crops:Crop[];offers:Offer[];logistics:Logistics;bands:Band[];interests:{id:string;cropId:string;offerId:string;date:string}[];readNotifications:boolean};
+export type State={onboarded?:boolean;role:string;registered:boolean;profile:{name:string;contact:string;city:string;address:string};users:{id:string;name:string;role:string;active:boolean}[];crops:Crop[];offers:Offer[];logistics:Logistics;bands:Band[];interests:{id:string;cropId:string;offerId:string;date:string}[];readNotifications:boolean};
 export function seed(demo:boolean):State{
 const day=(n:number)=>{const d=new Date();d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)};
 const users=[{id:'p1',name:'Alejandro Martínez',role:'Productor',active:true},{id:'p2',name:'María Hernández',role:'Productor',active:true},...['Comercializadora del Bajío','Abastos La Cosecha','Alimentos del Centro','Mercado Verde CDMX','Distribuidora El Molino','Central del Norte','Granos San José','Comercial del Pacífico','Almacenes de Occidente'].map((name,i)=>({id:'b'+i,name,role:'Comprador',active:true}))];
