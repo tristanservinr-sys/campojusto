@@ -20,3 +20,11 @@ El prototipo es una demo con datos ficticios. Usa React, TypeScript, Vinext comp
 5. Aprovisionar administradores por una vía privada, revisar políticas con pruebas de usuarios cruzados y verificar contactos antes de producción comercial.
 
 No hay pagos, contratos, chat, gráficas ni historial territorial. No se garantiza rentabilidad. No se usan secretos en el navegador. La demo de administración no concede permisos sobre cuentas reales ni sobre otras demos.
+
+## Agente de ElevenLabs
+
+Integrado globalmente con el widget oficial, versión fijada 0.22.2. Agente: `agent_7701m64pv4r2e1pvf18txwqdy00c`. El usuario inicia la conversación desde el botón del widget; cargar la página no inicia llamadas ni solicita el micrófono. No se envían automáticamente nombres, contactos, ubicación o resultados económicos al agente. No tiene herramientas para modificar el ranking ni confirmar ventas. El asistente determinista de evaluación económica sigue separado.
+
+El widget público no requiere claves en el sitio. Mantener el agente disponible para el dominio publicado de CampoJusto desde la configuración de ElevenLabs. Si el agente se hace privado, preparar autenticación del servidor antes de reactivarlo; no exponer claves en el navegador.
+
+Documentación: https://elevenlabs.io/docs/eleven-agents/customization/widget
