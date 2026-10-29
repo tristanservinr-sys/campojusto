@@ -1,0 +1,18 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {evaluate,topThree} from '../lib/campojusto/engine.ts';
+import {seed} from '../lib/campojusto/seed.ts';
+const s=seed(true),c=s.crops[0],today=new Date().toISOString().slice(0,10);
+const run=(crop=c,offers=s.offers,logistics=s.logistics,users=s.users)=>evaluate(crop,offers,logistics,s.bands,users,today);
+test('top three ranks by net total, not offered unit price',()=>{const top=topThree(run());assert.deepEqual(top.map(r=>r.offer.id),['d0','d2','d1']);assert.equal(top[0].quantity,8000);assert.equal(top[0].trips,3);assert.equal(top[0].fuel,3*(48+51)*.18*24.5);assert.equal(top[0].assigned,36000);assert.equal(top[0].result,top[0].net-36000)});
+test('outside profitable offer never enters principal top three',()=>{assert.equal(run().find(r=>r.offer.id==='d3').category,'outside');assert.ok(run().find(r=>r.offer.id==='d3').net>topThree(run())[0].net)});
+test('non recovering offer stays visible as loss',()=>assert.equal(run().find(r=>r.offer.id==='d4').category,'loss'));
+test('band violation, insufficient complete quantity and incompatible dates excluded before routing',()=>{const rows=run();for(const id of ['d5','d6','d7']){assert.equal(rows.find(r=>r.offer.id===id).category,'excluded');assert.equal(rows.find(r=>r.offer.id===id).distance,null)}});
+test('unknown route never ranked',()=>assert.equal(run().find(r=>r.offer.id==='d8').category,'pending'));
+test('inactive account cannot match',()=>{const users=s.users.map(u=>u.id==='b0'?{...u,active:false}:u);assert.equal(run(c,s.offers,s.logistics,users)[0].category,'excluded')});
+test('minimum price, mandatory variety, expiry and inactive publication enforced',()=>{for(const change of [{price:3},{variety:'Amarillo'},{expires:'2000-01-01'},{active:false}]){assert.equal(run(c,[{...s.offers[0],...change}])[0].category,'excluded')}});
+test('return fallback is marked and uses outbound for return',()=>{const r=run(c,[{...s.offers[0],back:null}])[0];assert.equal(r.returnEstimated,true);assert.equal(r.fuel,r.trips*96*.18*24.5)});
+test('production cost is based on full harvest, not remaining stock',()=>{const r=run({...c,available:4000})[0];assert.equal(r.assigned,18000);assert.equal(r.quantity,4000)});
+test('date boundary with one common day qualifies',()=>{const r=run(c,[{...s.offers[0],start:c.end,end:c.end}])[0];assert.notEqual(r.category,'excluded');assert.equal(r.date,c.end)});
+test('exact radio boundary is eligible and insufficient candidates are not padded',()=>{const r=run(c,[{...s.offers[0],out:150}]);assert.equal(r[0].category,'eligible');assert.equal(topThree(r).length,1)});
+test('complete delivery succeeds only with enough stock',()=>{assert.equal(run({...c,available:16000,total:16000},[s.offers[6]])[0].quantity,15000)});
