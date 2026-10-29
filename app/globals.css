@@ -10,3 +10,7 @@
 @media(max-width:700px){.entry-page{padding:26px 18px 18px}.entry-brand{font-size:25px}.entry-card{padding:27px 23px;margin:35px auto auto}.entry-card h1{font-size:28px}.entry-card>p{font-size:13px}.entry-role{padding:17px 14px}.entry-card .btn{min-height:51px}.entry-page>footer{margin-top:auto;padding-top:25px}.demo-banner{gap:5px;font-size:10px}.change-profile{font-size:10px}.view-tabs button{flex:1}.buyer-top h3{font-size:12px}.stat-sub{font-size:9px}}
 .agent-retry{position:fixed;right:20px;bottom:20px;z-index:60;display:flex;align-items:center;gap:8px;border:1px solid #dce7d4;background:white;color:#365d2e;padding:13px 16px;border-radius:12px;box-shadow:0 4px 18px #26452616;font-size:12px}
 @media(max-width:700px){.agent-retry{right:12px;bottom:12px}}
+/* Nombre actualizado: conserva espacio en la barra lateral. */
+.brand{font-size:17px;letter-spacing:-.6px;gap:6px;padding:0 3px;white-space:nowrap}.brand-mark svg{width:24px;height:24px}.entry-brand{font-size:24px;letter-spacing:-.8px}
+@media(max-width:1020px){.brand{font-size:15px;gap:5px}.brand-mark svg{width:22px;height:22px}}
+@media(max-width:700px){.sidebar.visible .brand{font-size:18px}.entry-brand{font-size:23px}}

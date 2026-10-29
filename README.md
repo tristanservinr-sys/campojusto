@@ -1,4 +1,4 @@
-# CampoJusto
+# CHAPINGENIEROS
 
 Prototipo funcional de un mercado agrícola mexicano. Incluye entrada con nombre y rol (productor o consumidor), cosechas, pedidos, matching comercial, cálculo logístico, ranking económico y un agente de ElevenLabs.
 

@@ -51,7 +51,7 @@ export default function VoiceAgent() {
   return <>
     {status === 'ready' && createElement('elevenlabs-convai', {
       'agent-id': AGENT_ID,
-      'action-text': 'Asistente CampoJusto',
+      'action-text': 'Asistente CHAPINGENIEROS',
       'start-call-text': 'Hablar',
       'end-call-text': 'Terminar',
       'expand-text': 'Abrir asistente',
@@ -59,6 +59,6 @@ export default function VoiceAgent() {
       'speaking-text': 'Hablando…',
       'dismissible': 'true',
     })}
-    {status === 'error' && <button className="agent-retry" onClick={() => setAttempt(n => n + 1)} aria-label="Reintentar cargar el asistente de CampoJusto"><MessageCircle size={18}/><span>Reintentar asistente</span><RotateCcw size={14}/></button>}
+    {status === 'error' && <button className="agent-retry" onClick={() => setAttempt(n => n + 1)} aria-label="Reintentar cargar el asistente de CHAPINGENIEROS"><MessageCircle size={18}/><span>Reintentar asistente</span><RotateCcw size={14}/></button>}
   </>;
 }
